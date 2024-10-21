@@ -1,0 +1,79 @@
+services:
+    api: &api
+        image: caju-beneficios-api:latest
+        container_name: api
+        tty: true
+        build:
+            context: .
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        ports:
+            - ${APP_HOST_PORT:-8000}:${APP_HOST_PORT:-8000}
+        networks:
+            - api
+
+    prometheus:
+        image: prom/prometheus:v2.52.0
+        container_name: prometheus
+        volumes:
+            - ./.monitoring/prometheus/:/etc/prometheus/
+        ports:
+            - 3000:9090
+        networks:
+            - api
+
+    grafana:
+        image: grafana/grafana:11.0.0
+        container_name: grafana
+        environment:
+            GF_AUTH_ANONYMOUS_ENABLED: true
+            GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+        volumes:
+            - ./.monitoring/grafana/prometheus-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+            - ./.monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+        depends_on:
+            - prometheus
+        ports:
+            - 3001:3000
+        networks:
+            - api
+
+    mongodb:
+        image: mongo:8.0.1
+        container_name: caju-beneficios-api_mongodb
+        command: mongod --replSet rs0
+        environment:
+            MONGO_INITDB_DATABASE: caju_beneficios_api
+        ports:
+            - 27017:27017
+        volumes:
+            - mongodb:/data/db
+            - mongodb:/data/configdb
+
+    mongodb-init:
+        image: mongo:8.0.1
+        container_name: caju-beneficios-api_mongodb-init
+        depends_on:
+            - mongodb
+        command: >
+            mongosh --host mongodb:27017 --eval 
+            '
+            rs.initiate(
+                {
+                _id : "rs0", members: [
+                    { _id : 0, host : "mongodb:27017" }
+                ]
+                }
+            )
+            '
+
+    runner:
+        <<: *api
+        command: /bin/ash
+
+volumes:
+    mongodb:
+
+networks:
+    api:
