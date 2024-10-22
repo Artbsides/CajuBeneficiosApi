@@ -10,13 +10,13 @@ Com o objetivo de minimizar possíveis problemas de concorrência na atualizaç�
 
 Outras possíveis soluções podem ser exploradas caso o bloqueio otimista não se mostre suficientemente eficiente. Por exemplo:
 
-1. Bloqueio Pessimista: Quando uma transação é iniciada, os dados que serão modificados são bloqueados, impedindo que outras transações acessem esses dados até que o bloqueio seja liberado.
+1. **Bloqueio Pessimista**: Quando uma transação é iniciada, os dados que serão modificados são bloqueados, impedindo que outras transações acessem esses dados até que o bloqueio seja liberado.
 
-2. Fila de Transações: Transações são processadas sequencialmente por meio de uma fila, que gerencia as requisições simultâneas, como ilustrado no fluxograma abaixo:
+2. **Fila de Transações**: Transações são processadas sequencialmente por meio de uma fila, que gerencia as requisições simultâneas, como ilustrado no fluxograma abaixo:
 
 ![Queue-based flow](.docs/queue-based_flow.jpg)
 
-Dependendo das necessidades do sistema, outras opções para arquiteturas distribuídas podem ser exploradas, como Sagas, Transações Distribuídas e 2PC (Two-Phase Commit).
+Dependendo das necessidades do sistema, outras opções para arquiteturas distribuídas podem ser exploradas, como **Sagas**, **Transações Distribuídas** e **2PC (Two-Phase Commit)**.
 
 # Instalação
 
