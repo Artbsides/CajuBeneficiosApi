@@ -12,9 +12,10 @@ from api.modules.transactions.v1.dtos.authorizer import AuthorizerDto
 from api.modules.transactions.v1.enums.transaction_code import TransactionCode
 
 
-class ExceptionHandler:
-    logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger("uvicorn.error")
 
+
+class ExceptionHandler:
     @staticmethod
     async def throw(_: Request, exception: BaseExceptionError) -> JSONResponse:
         module = "HTTPExceptionError" if isinstance(exception, HTTPException) \
@@ -29,7 +30,7 @@ class ExceptionHandler:
         if status_code := getattr(exception, "status_code", ""):
             status_code = f" {status_code}"
 
-        ExceptionHandler.logger.error("%s%s, %s", module,
+        logger.error("%s%s, %s", module,
             status_code, exception.args or "Not mapped exception", exc_info=True
         )
 

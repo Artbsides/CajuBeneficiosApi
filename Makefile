@@ -60,7 +60,7 @@ tests: -B  ## Run tests - Parameters: dockerized=true, verbose=true
 		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
 	fi
 
-	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
+	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
 
 tests-debug: -B  ## Run debuggable tests - Parameters: dockerized=true, verbose=true
 	DOCKER_COMPOSE=""
@@ -104,15 +104,21 @@ database-seeds: ## Run seeds on dockerized mongodb database
 database-seeds-debug:  ## Run debuggable seeds on dockerized mongodb database
 	@poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client seeds/main.py
 
-run:  ## Run dockerized api
-	@APP_DEBUG="false" APP_ENVIRONMENT=production docker-compose up api --wait
+run:  ## Run dockerized api - Parameters: dockerized=true
+	DOCKER_COMPOSE=""
+
+	@if [ "$(dockerized)" = "true" ]; then
+		DOCKER_COMPOSE="docker-compose up api --wait"
+	fi
+
+	APP_DEBUG=false APP_ENVIRONMENT=production $$DOCKER_COMPOSE poetry run gunicorn api.main:app --workers=4 --worker-class=uvicorn.workers.UvicornWorker --bind=${APP_HOST}:${APP_HOST_PORT}
 
 run-terminal:  ## Run dockerized api terminal
 	@docker-compose run --rm runner
 
 run-debug:  ## Run debuggable dockerized api
 	@COMPOSE_DEVELOPMENT_COMMAND="python -m debugpy --listen ${APP_HOST}:5678 -m uvicorn api.main:app --host ${APP_HOST} --port ${APP_HOST_PORT} --reload" \
-		docker-compose -f compose.yml -f compose.development.yml up api --wait
+		docker-compose -f compose.yml -f compose.development.yml up api
 
 run-terminal-debug:  ## Run debuggable dockerized api terminal
 	@docker-compose -f compose.yml -f compose.development.yml run --rm runner

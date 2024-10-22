@@ -1,10 +1,10 @@
 # CajuBeneficiosApi
 
-Aplicação desenvolvida em [Python 3.12.3](https://python.org)...
+Aplicação desenvolvida em [Python 3.12.3](https://python.org), focada em autorizar transações financeiras a partir de categorias de benefícios específicos.
 
 # Armazenamento de Dados
 
-Esta aplicação possui armazenamento em banco de dados ...
+Esta aplicação possui armazenamento em banco de dados MongoDB, portanto, é necessário que o banco esteja disponível antes do uso dos recursos da aplicação.
 
 # Instalação
 
@@ -116,10 +116,10 @@ http://localhost:3001 (Grafana)
 * [Poetry](https://python-poetry.org)
 * [FastAPI](https://fastapi.tiangolo.com)
 * [Pydantic](https://docs.pydantic.dev/latest)
+* [MongoDB](https://www.mongodb.com)
 * [Faker](https://faker.readthedocs.io/en/master)
 * [Swagger](https://swagger.io)
 * [Docker](https://docs.docker.com)
 * [Kubernetes](https://kubernetes.io/pt-br)
-* [MongoDB](https://www.mongodb.com)
 * [Postman](https://www.postman.com)
 * [VSCode](https://code.visualstudio.com)

@@ -2,7 +2,7 @@ import jwt
 import pytest
 
 from faker import Faker
-from typing import ClassVar, AsyncGenerator
+from typing import AsyncGenerator
 from fastapi import status
 from datetime import datetime, timezone, timedelta
 from seeds.main import drop_database, populate_database
@@ -15,26 +15,10 @@ from api.modules.transactions.v1.enums.transaction_code import TransactionCode
 
 
 class TestTransactionsController:
-    faker = Faker()
-    category_codes = CategoryCodes.list()
     client = TestClient(app)
-
-    authorization: ClassVar = {
-        "Authorization": f"Bearer {
-            jwt.encode(
-                key=settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM, payload={
-                    "exp": (datetime.now(timezone.utc) + timedelta(seconds=5)).timestamp()
-                }
-            )
-        }"
-    }
-
-    payload: ClassVar = {
-        "account": "6712b3eb3ec7354864d4274f",
-        "totalAmount": faker.pyfloat(right_digits=2, min_value=0, max_value=4),
-        "mcc": str(faker.random_number(digits=4)),
-        "merchant": "UBER TRIP                   SAO PAULO BR"
-    }
+    category_codes = CategoryCodes.list()
+    authorization: dict
+    payload: dict
 
     @pytest.fixture(autouse=True, scope="class")
     async def setup_class(self) -> AsyncGenerator[None, None]:
@@ -44,6 +28,25 @@ class TestTransactionsController:
         yield
 
         await drop_database()
+
+    @pytest.fixture(autouse=True)
+    def setup_function(self, faker: Faker) -> None:
+        self.authorization = {
+            "Authorization": f"Bearer {
+                jwt.encode(
+                    key=settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM, payload={
+                        "exp": (datetime.now(timezone.utc) + timedelta(seconds=5)).timestamp()
+                    }
+                )
+            }"
+        }
+
+        self.payload = {
+            "account": "6712b3eb3ec7354864d4274f",
+            "totalAmount": faker.pyfloat(right_digits=2, min_value=0, max_value=4),
+            "mcc": str(faker.random_number(digits=4)),
+            "merchant": "UBER TRIP                   SAO PAULO BR"
+        }
 
     def authorizer_forbidden_test(self) -> None:
         response = self.client.post("/v1/transactions/authorizer")
@@ -111,10 +114,10 @@ class TestTransactionsController:
 
         assert response.json()["code"] == TransactionCode.authorized
 
-    def authorizer_unsuficient_money_test(self) -> None:
+    def authorizer_unsuficient_money_test(self, faker: Faker) -> None:
         response = self.client.post("/v1/transactions/authorizer",
             headers=self.authorization, json={
-                **self.payload, "totalAmount": self.faker.pyfloat(right_digits=2, min_value=8)
+                **self.payload, "totalAmount": faker.pyfloat(right_digits=2, min_value=8)
             }
         )
 
@@ -123,10 +126,10 @@ class TestTransactionsController:
 
         assert response.json()["code"] == TransactionCode.unauthorized
 
-    def authorizer_cash_category_test(self) -> None:
+    def authorizer_cash_category_test(self, faker: Faker) -> None:
         response = self.client.post("/v1/transactions/authorizer?fallback=true",
             headers=self.authorization, json={
-                **self.payload, "totalAmount": self.faker.pyfloat(right_digits=2, max_value=12)
+                **self.payload, "totalAmount": faker.pyfloat(right_digits=2, max_value=12)
             }
         )
 
