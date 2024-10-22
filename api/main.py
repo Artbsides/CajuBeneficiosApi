@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from starlette.middleware.exceptions import ExceptionMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -18,9 +19,9 @@ app.add_middleware(
     ExceptionMiddleware, handlers={ Exception: ExceptionHandler.throw }
 )
 
-app.add_exception_handler(
-    HTTPException, ExceptionHandler.throw
-)
+app.add_exception_handler(HTTPException, ExceptionHandler.throw)
+app.add_exception_handler(RequestValidationError, ExceptionHandler.throw)
+
 
 app.include_router(router)
 

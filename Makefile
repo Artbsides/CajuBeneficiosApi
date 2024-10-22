@@ -60,7 +60,7 @@ tests: -B  ## Run tests - Parameters: dockerized=true, verbose=true
 		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
 	fi
 
-	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
+	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
 
 tests-debug: -B  ## Run debuggable tests - Parameters: dockerized=true, verbose=true
 	DOCKER_COMPOSE=""
