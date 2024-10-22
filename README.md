@@ -93,10 +93,10 @@ Ao final da inicialização, o serviço estará disponível na seguinte url `htt
 
 # Documentação
 
-Os arquivos de documentação disponibilizados no diretório `.docs` podem ser importados no `Postman` para uso da aplicação em ambiente local. Caso prefira, a documentação pode ser acessada também através da url abaixo:
+Os arquivos de documentação disponibilizados no diretório `.docs` podem ser importados no `Postman` para uso da aplicação em ambiente local (recomendado). Caso prefira, a documentação pode ser acessada também através da url abaixo:
 
 ```
-https://documenter.getpostman.com/view/...
+https://documenter.getpostman.com/view/4274276/2sAY4rDPqh
 ```
 
 Há também a documentação do `Swagger`, que é gerada a partir do código da aplicação e pode ser acessada ao inicializá-la em modo debug (ambiente de desenvolvimento) através da seguinte url:
