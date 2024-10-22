@@ -93,7 +93,7 @@ Ao final da inicialização, o serviço estará disponível na seguinte url `htt
 
 # Documentação
 
-Os arquivos de documentação disponibilizados no diretório `.docs` podem ser importados no `Postman` para uso da aplicação em ambiente local (recomendado). Caso prefira, a documentação pode ser acessada também através da url abaixo:
+Os arquivos de documentação disponibilizados no diretório `.docs` podem ser importados no `Postman` para uso da aplicação em ambiente local (recomendado). A documentação está disponível também através da url abaixo:
 
 ```
 https://documenter.getpostman.com/view/4274276/2sAY4rDPqh
