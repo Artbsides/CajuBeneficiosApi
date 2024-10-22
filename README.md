@@ -1,10 +1,22 @@
 # CajuBeneficiosApi
 
-Aplicação desenvolvida em [Python 3.12.3](https://python.org), focada em autorizar transações financeiras a partir de categorias de benefícios específicos.
+Aplicação desenvolvida em [Python 3.12.3](https://python.org), focada na autorização de transações financeiras realizadas com cartões de crédito de benefícios, com saldo distribuído em categorias específicas.
 
 # Armazenamento de Dados
 
-Esta aplicação possui armazenamento em banco de dados MongoDB, portanto, é necessário que o banco esteja disponível antes do uso dos recursos da aplicação.
+Esta aplicação possui armazenamento em banco de dados MongoDB, portanto, é necessário que o banco esteja disponível antes do seu consumo pela aplicação.
+
+Com o objetivo de minimizar possíveis problemas de concorrência na atualização de dados, e assumindo que conflitos entre transações são improváveis ainda que possam ocorrer, foi implementado o uso de [bloqueio otimista](...) com base no autogerenciamento do campo [revision_id](https://beanie-odm.dev/tutorial/revision) das collections.
+
+Outras possíveis soluções podem ser exploradas caso o bloqueio otimista não se mostre suficientemente eficiente. Por exemplo:
+
+1. Bloqueio Pessimista: Quando uma transação é iniciada, os dados que serão modificados são bloqueados, impedindo que outras transações acessem esses dados até que o bloqueio seja liberado.
+
+2. Fila de Transações: Transações são processadas sequencialmente por meio de uma fila, que gerencia as requisições simultâneas, como ilustrado no fluxograma abaixo:
+
+![Queue-based flow](.docs/queue-based_flow.jpg)
+
+Dependendo das necessidades do sistema, outras opções para arquiteturas distribuídas podem ser exploradas, como Sagas, Transações Distribuídas e 2PC (Two-Phase Commit).
 
 # Instalação
 

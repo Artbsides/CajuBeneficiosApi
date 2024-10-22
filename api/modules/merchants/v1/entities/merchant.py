@@ -11,4 +11,6 @@ class BaseDocument(Document):
 class Merchant(Timestamp, BaseDocument):
     class Settings:
         name = "merchants"
+        use_revision = True
+
         indexes = Timestamp.indexes

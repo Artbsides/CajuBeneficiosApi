@@ -11,4 +11,6 @@ class BaseDocument(Document):
 class Account(Timestamp, BaseDocument):
     class Settings:
         name = "accounts"
+        use_revision = True
+
         indexes = Timestamp.indexes

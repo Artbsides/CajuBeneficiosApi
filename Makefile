@@ -98,7 +98,7 @@ database:  ## Run dockerized mongodb database
 
 	@$(MAKE) database-seeds > /dev/null 2>&1 || true
 
-database-seeds: ## Run seeds on dockerized mongodb database
+database-seeds:  ## Run seeds on dockerized mongodb database
 	@poetry run python seeds/main.py
 
 database-seeds-debug:  ## Run debuggable seeds on dockerized mongodb database
