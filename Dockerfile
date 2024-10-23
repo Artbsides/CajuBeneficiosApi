@@ -13,7 +13,7 @@ RUN poetry export --output requirements.dev.txt --with-credentials --no-interact
 RUN pip install -r requirements.dev.txt --require-hashes --no-cache-dir && \
     pip uninstall poetry --yes
 
-ENV PYTHONPATH /app
+ENV PYTHONPATH=/app
 
 FROM python:3.12.3-alpine
 
@@ -35,6 +35,6 @@ USER appuser
 ENV APP_HOST=${APP_HOST:-0.0.0.0} \
     APP_HOST_PORT=${APP_HOST_PORT:-8000}
 
-ENV PYTHONPATH /app
+ENV PYTHONPATH=/app
 
-CMD gunicorn api.main:app --workers=4 --worker-class=uvicorn.workers.UvicornWorker --bind=${APP_HOST}:${APP_HOST_PORT}
+CMD ["gunicorn", "api.main:app", "--workers=4", "--worker-class=uvicorn.workers.UvicornWorker", "--bind=${APP_HOST}:${APP_HOST_PORT}"]
