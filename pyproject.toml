@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "caju-beneficios-api"
-version = "1.0.0"
+version = "1.0.1"
 description = "Caju Benefícios Api"
 authors = ["RempelOliveira <rempel.oliveira@gmail.com>"]
 readme = "README.md"

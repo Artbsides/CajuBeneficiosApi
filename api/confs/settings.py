@@ -16,7 +16,7 @@ class BaseConfig:
     )
 
     APP_HOST_PORT = config("APP_HOST_PORT",
-        default=8000, cast=int
+        default="8000", cast=str
     )
 
     APP_PREFIX = config("APP_PREFIX",
@@ -24,7 +24,7 @@ class BaseConfig:
     )
 
     DATABASE_PORT = config("DATABASE_PORT",
-        default=27017, cast=int
+        default="27017", cast=str
     )
 
     DATABASE_HOST = config("DATABASE_HOST",
