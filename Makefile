@@ -93,8 +93,8 @@ code-convention:  ## Run dockerized code convention - Parameters: dockerized=tru
 		POETRY_RUN="poetry run"
 	fi
 
-	$$DOCKER_COMPOSE ruff check . $(if $(filter "$(github)", "true"),--output-format github,)
-	$$DOCKER_COMPOSE isort $(if $(filter "$(fix-imports)", "true"),,--check) . -q
+	$$DOCKER_COMPOSE $$POETRY_RUN ruff check . $(if $(filter "$(github)", "true"),--output-format github,)
+	$$DOCKER_COMPOSE $$POETRY_RUN isort $(if $(filter "$(fix-imports)", "true"),,--check) . -q
 
 coverage:  ## Run dockerized tests and write reports - Parameters: dockerized=true
 	POETRY_RUN=""
