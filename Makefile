@@ -50,49 +50,68 @@ dependencies:  ## Resolve dependencies for local development
 	@poetry --version &> /dev/null || (pip3 install poetry && false) && \
 		poetry config virtualenvs.in-project true
 
+	@poetry config virtualenvs.in-project true
+	@poetry env use $(shell pyenv which python)
+
+	@poetry lock
 	@poetry install
 
 tests: -B  ## Run tests - Parameters: dockerized=true, verbose=true
-	DOCKER_COMPOSE=""
-
-	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --rm runner"
-	fi
-
-	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
-
-tests-debug: -B  ## Run debuggable tests - Parameters: dockerized=true, verbose=true
-	DOCKER_COMPOSE=""
-
-	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --service-ports -e APP_ENVIRONMENT=tests --rm runner"
-	fi
-
-	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client -m pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
-
-code-convention:  ## Run dockerized code convention - Parameters: dockerized=true, fix-imports=true, github=true
+	POETRY_RUN=""
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
 		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+	else
+		POETRY_RUN="poetry run"
 	fi
 
-	$$DOCKER_COMPOSE poetry run ruff check . $(if $(filter "$(github)", "true"),--output-format github,)
-	$$DOCKER_COMPOSE poetry run isort $(if $(filter "$(fix-imports)", "true"),,--check) . -q
+	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE $$POETRY_RUN pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
 
-coverage:  ## Run dockerized tests and write reports - Parameters: dockerized=true
+tests-debug: -B  ## Run debuggable tests - Parameters: dockerized=true, verbose=true
+	POETRY_RUN=""
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --service-ports --rm runner"
+	else
+		POETRY_RUN="poetry run"
 	fi
 
-	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run pytest --cov-report=html:tests/reports
+	echo "==== Ready to attach to port 5789..."
+
+	APP_ENVIRONMENT=tests PYDEVD_DISABLE_FILE_VALIDATION=true $$DOCKER_COMPOSE $$POETRY_RUN python \
+		-m debugpy --listen ${APP_HOST}:5678 --wait-for-client -m pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
+
+code-convention:  ## Run dockerized code convention - Parameters: dockerized=true, fix-imports=true, github=true
+	POETRY_RUN=""
+	DOCKER_COMPOSE=""
+
+	@if [ "$(dockerized)" = "true" ]; then
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+	else
+		POETRY_RUN="poetry run"
+	fi
+
+	$$DOCKER_COMPOSE ruff check . $(if $(filter "$(github)", "true"),--output-format github,)
+	$$DOCKER_COMPOSE isort $(if $(filter "$(fix-imports)", "true"),,--check) . -q
+
+coverage:  ## Run dockerized tests and write reports - Parameters: dockerized=true
+	POETRY_RUN=""
+	DOCKER_COMPOSE=""
+
+	@if [ "$(dockerized)" = "true" ]; then
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+	else
+		POETRY_RUN="poetry run"
+	fi
+
+	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE $$POETRY_RUN pytest --cov-report=html:tests/reports
 
 database:  ## Run dockerized mongodb database - Parameters: seed=true
 	@docker-compose up mongodb --wait
 
-	@sleep 2
+	@sleep 5
 	@docker-compose run --rm mongodb-init > /dev/null 2>&1 || true
 
 	@if [ "$(seed)" = "true" ]; then
@@ -100,28 +119,52 @@ database:  ## Run dockerized mongodb database - Parameters: seed=true
 	fi
 
 database-seeds:  ## Run seeds on dockerized mongodb database - Parameters: dockerized=true
-	@poetry run python seeds/main.py > /dev/null 2>&1 || true
+	POETRY_RUN=""
+
+	@if [ "$(dockerized)" = "true" ]; then
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+	else
+		POETRY_RUN="poetry run"
+	fi
+
+	$$DOCKER_COMPOSE $$POETRY_RUN python seeds/main.py > /dev/null 2>&1 || true
 
 database-seeds-debug:  ## Run debuggable seeds on dockerized mongodb database - Parameters: dockerized=true
-	@poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client seeds/main.py
+	POETRY_RUN=""
+	DOCKER_COMPOSE=""
+
+	@if [ "$(dockerized)" = "true" ]; then
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --service-ports --rm runner"
+	else
+		POETRY_RUN="poetry run"
+	fi
+
+	echo "==== Ready to attach to port 5789..."
+
+	PYDEVD_DISABLE_FILE_VALIDATION=true $$DOCKER_COMPOSE $$POETRY_RUN python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client seeds/main.py
 
 run:  ## Run dockerized api
-	@APP_DEBUG=false APP_ENVIRONMENT=production docker-compose up api
+	@docker-compose up api
 
 run-debug:  ## Run debuggable dockerized api
 	@COMPOSE_DEVELOPMENT_COMMAND="python -m debugpy --listen ${APP_HOST}:5678 -m uvicorn api.main:app --host ${APP_HOST} --port ${APP_HOST_PORT} --reload" \
 		docker-compose -f compose.yml -f compose.development.yml up api
 
-run-terminal:  ## Run dockerized api terminal
-	@docker-compose run --rm runner
+run-terminal:  ## Run debuggable dockerized api terminal - Parameters: environment=staging|production
+	RUNNER="run --rm runner"
 
-run-terminal-debug:  ## Run debuggable dockerized api terminal
-	@APP_ENVIRONMENT=development docker-compose -f compose.yml -f compose.development.yml run --rm runner
+	@if [ "$(environment)" = "staging" ]; then
+		docker-compose -f compose.yml -f compose.development.yml $$RUNNER
+	elif [ "$(environment)" = "production" ]; then
+		docker-compose $$RUNNER
+	else
+		echo "==== Environment not found."
+	fi
 
 monitoring:  ## Run dockerized monitoring
 	@docker-compose up -d prometheus grafana --wait
 
-stop:  ## Stop dockerized api, terminal and monitoring
+stop:  ## Stop all dockerized services
 	@docker-compose down --volumes
 
 secrets:  ## Encrypt or decrypt k8s secrets - Parameters: action=encrypt|decrypt, environment=staging|production
