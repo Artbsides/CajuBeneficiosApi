@@ -37,4 +37,4 @@ ENV APP_HOST=${APP_HOST:-0.0.0.0} \
 
 ENV PYTHONPATH=/app
 
-CMD ["gunicorn", "api.main:app", "--workers=4", "--worker-class=uvicorn.workers.UvicornWorker", "--bind=${APP_HOST}:${APP_HOST_PORT}"]
+CMD ["sh", "-c", "gunicorn api.main:app --workers=4 --worker-class=uvicorn.workers.UvicornWorker --bind=${APP_HOST}:${APP_HOST_PORT}"]
