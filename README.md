@@ -33,7 +33,7 @@ A partir deste ponto, basta rodar o seguinte comando para instalar a aplicação
 $ make install
 ```
 
-Além da instalção de todas as dependências, ao final da execução, testes automatizados e rotinas relacionadas serão executadas. Caso seja necessária a execução individual das rotinas, basta utilizar o comando `make <option>`.
+Além da instalção de todas as dependências, ao final da execução, testes automatizados e rotinas relacionadas serão executadas. Caso seja necessária a execução individual das rotinas, basta utilizar o comando `make <option> <parameters>`.
 
 Para exibir a lista de rotinas disponníveis, execute o comando `make` ou `make help`.
 

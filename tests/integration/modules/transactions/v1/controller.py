@@ -25,7 +25,7 @@ class TestTransactionsController:
     async def setup_class(self) -> AsyncGenerator[None, None]:
         await drop_database()
 
-        await sleep(2)
+        await sleep(5)
         await populate_database()
 
         yield
