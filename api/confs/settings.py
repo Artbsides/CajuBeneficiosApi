@@ -23,11 +23,19 @@ class BaseConfig:
         default="", cast=str
     )
 
+    DATABASE_PORT = config("DATABASE_PORT",
+        default=27017, cast=int
+    )
+
+    DATABASE_HOST = config("DATABASE_HOST",
+        default="", cast=str
+    )
+
     DATABASE_NAME = config("DATABASE_NAME",
         default="", cast=str
     )
 
-    DATABASE_CONNECTION_STRING = config("DATABASE_CONNECTION_STRING",
+    DATABASE_PARAMETERS = config("DATABASE_PARAMETERS",
         default="", cast=str
     )
 
@@ -63,7 +71,7 @@ def get_environment_settings() -> BaseConfig:
     }
 
     return config_cls_dict[
-        BaseConfig.APP_ENVIRONMENT.lower()
+        str(BaseConfig.APP_ENVIRONMENT).lower()
     ]()
 
 

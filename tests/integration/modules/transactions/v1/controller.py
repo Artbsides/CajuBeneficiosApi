@@ -3,6 +3,7 @@ import pytest
 
 from faker import Faker
 from typing import AsyncGenerator
+from asyncio import sleep
 from fastapi import status
 from datetime import datetime, timezone, timedelta
 from seeds.main import drop_database, populate_database
@@ -23,11 +24,14 @@ class TestTransactionsController:
     @pytest.fixture(autouse=True, scope="class")
     async def setup_class(self) -> AsyncGenerator[None, None]:
         await drop_database()
+
+        await sleep(2)
         await populate_database()
 
         yield
 
         await drop_database()
+
 
     @pytest.fixture(autouse=True)
     def setup_function(self, faker: Faker) -> None:

@@ -1,4 +1,4 @@
-name: CajuBeneficiosApi - OnPush
+name: AuthorizationPackage - OnPush
 
 on:
     push:
@@ -28,6 +28,10 @@ jobs:
             run: |
                 make dependencies
 
+          - name: Initialize Database
+            run: |
+                make database
+
           - name: Tests
             run: |
                 make tests
@@ -35,7 +39,6 @@ jobs:
     CodeConvention:
         runs-on: ubuntu-22.04
         steps:
-
           - name: Checkout
             uses: actions/checkout@v3
 

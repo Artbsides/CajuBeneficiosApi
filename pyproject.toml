@@ -20,6 +20,7 @@ gunicorn = "^22.0.0"
 beanie = "^1.27.0"
 pydantic-mongo = "^2.3.0"
 prometheus-fastapi-instrumentator = "^7.0.0"
+pymongo = "4.8"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.5"

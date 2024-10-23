@@ -6,7 +6,7 @@ from api.confs.settings import settings
 
 
 async def mongodb_session(document_models: Optional[list] = None) -> AsyncIOMotorClientSession:
-    client = AsyncIOMotorClient(settings.DATABASE_CONNECTION_STRING)
+    client = AsyncIOMotorClient(f"{settings.DATABASE_HOST}:{settings.DATABASE_PORT}{settings.DATABASE_PARAMETERS}")
 
     if document_models:
         await init_beanie(

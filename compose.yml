@@ -8,20 +8,22 @@ services:
             dockerfile: Dockerfile
         env_file:
             - .env
+        environment:
+            DATABASE_HOST: mongodb://mongodb
+        depends_on:
+            - mongodb
         ports:
             - ${APP_HOST_PORT:-8000}:${APP_HOST_PORT:-8000}
-        networks:
-            - api
 
     prometheus:
         image: prom/prometheus:v2.52.0
         container_name: prometheus
         volumes:
             - ./.monitoring/prometheus/:/etc/prometheus/
+        depends_on:
+            - api
         ports:
             - 3000:9090
-        networks:
-            - api
 
     grafana:
         image: grafana/grafana:11.0.0
@@ -36,26 +38,22 @@ services:
             - prometheus
         ports:
             - 3001:3000
-        networks:
-            - api
 
     mongodb:
         image: mongo:8.0.1
-        container_name: caju-beneficios-api_mongodb
+        container_name: mongodb
         command: mongod --replSet rs0
         environment:
             MONGO_INITDB_DATABASE: caju_beneficios_api
-        ports:
-            - 27017:27017
         volumes:
             - mongodb:/data/db
             - mongodb:/data/configdb
+        ports:
+            - 27017:27017
 
     mongodb-init:
         image: mongo:8.0.1
-        container_name: caju-beneficios-api_mongodb-init
-        depends_on:
-            - mongodb
+        container_name: mongodb-init
         command: >
             mongosh --host mongodb:27017 --eval 
             '
@@ -67,6 +65,8 @@ services:
                 }
             )
             '
+        depends_on:
+            - mongodb
 
     runner:
         <<: *api
@@ -74,6 +74,3 @@ services:
 
 volumes:
     mongodb:
-
-networks:
-    api:

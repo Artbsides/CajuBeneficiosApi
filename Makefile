@@ -39,11 +39,10 @@ version:  ## Read or update api version - Parameters: update-to=[0-9].[0-9].[0-9
 
 build: stop  ## Build dockerized images, run tests and code convention
 	@docker-compose build
-
-	@echo
 	@docker-compose -f compose.yml -f compose.development.yml build
 
-	@echo
+	@$(MAKE) database
+
 	@$(MAKE) tests dockerized=true
 	@$(MAKE) code-convention dockerized=true
 
@@ -57,7 +56,7 @@ tests: -B  ## Run tests - Parameters: dockerized=true, verbose=true
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --rm runner"
 	fi
 
 	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
@@ -66,10 +65,10 @@ tests-debug: -B  ## Run debuggable tests - Parameters: dockerized=true, verbose=
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --service-ports -e APP_ENVIRONMENT=tests --rm runner"
 	fi
 
-	APP_ENVIRONMENT=tests PYDEVD_DISABLE_FILE_VALIDATION=true $$DOCKER_COMPOSE poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client -m pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
+	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client -m pytest $(if $(filter "$(verbose)", "true"),-sxvv,)
 
 code-convention:  ## Run dockerized code convention - Parameters: dockerized=true, fix-imports=true, github=true
 	DOCKER_COMPOSE=""
@@ -85,43 +84,39 @@ coverage:  ## Run dockerized tests and write reports - Parameters: dockerized=tr
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --rm runner"
 	fi
 
 	APP_ENVIRONMENT=tests $$DOCKER_COMPOSE poetry run pytest --cov-report=html:tests/reports
 
-database:  ## Run dockerized mongodb database
+database:  ## Run dockerized mongodb database - Parameters: seed=true
 	@docker-compose up mongodb --wait
 
 	@sleep 2
 	@docker-compose run --rm mongodb-init > /dev/null 2>&1 || true
 
-	@$(MAKE) database-seeds > /dev/null 2>&1 || true
-
-database-seeds:  ## Run seeds on dockerized mongodb database
-	@poetry run python seeds/main.py
-
-database-seeds-debug:  ## Run debuggable seeds on dockerized mongodb database
-	@poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client seeds/main.py
-
-run:  ## Run dockerized api - Parameters: dockerized=true
-	DOCKER_COMPOSE=""
-
-	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose up api --wait"
+	@if [ "$(seed)" = "true" ]; then
+		$(MAKE) database-seeds
 	fi
 
-	APP_DEBUG=false APP_ENVIRONMENT=production $$DOCKER_COMPOSE poetry run gunicorn api.main:app --workers=4 --worker-class=uvicorn.workers.UvicornWorker --bind=${APP_HOST}:${APP_HOST_PORT}
+database-seeds:  ## Run seeds on dockerized mongodb database - Parameters: dockerized=true
+	@poetry run python seeds/main.py > /dev/null 2>&1 || true
 
-run-terminal:  ## Run dockerized api terminal
-	@docker-compose run --rm runner
+database-seeds-debug:  ## Run debuggable seeds on dockerized mongodb database - Parameters: dockerized=true
+	@poetry run python -m debugpy --listen ${APP_HOST}:5678 --wait-for-client seeds/main.py
+
+run:  ## Run dockerized api
+	@APP_DEBUG=false APP_ENVIRONMENT=production docker-compose up api
 
 run-debug:  ## Run debuggable dockerized api
 	@COMPOSE_DEVELOPMENT_COMMAND="python -m debugpy --listen ${APP_HOST}:5678 -m uvicorn api.main:app --host ${APP_HOST} --port ${APP_HOST_PORT} --reload" \
 		docker-compose -f compose.yml -f compose.development.yml up api
 
+run-terminal:  ## Run dockerized api terminal
+	@docker-compose run --rm runner
+
 run-terminal-debug:  ## Run debuggable dockerized api terminal
-	@docker-compose -f compose.yml -f compose.development.yml run --rm runner
+	@APP_ENVIRONMENT=development docker-compose -f compose.yml -f compose.development.yml run --rm runner
 
 monitoring:  ## Run dockerized monitoring
 	@docker-compose up -d prometheus grafana --wait
