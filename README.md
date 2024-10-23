@@ -122,6 +122,7 @@ http://localhost:3001 (Grafana)
 * Integrar ferramentas para registro de eventos, erros e afins
 * Incrementar testes e documentação levando em consideração outros cenários de uso
 * Melhorar recursos do exception handler
+* Implementar uso de cache e melhorias nas actions do github
 
 # Pricipais Tecnologias Utilizadas
 
