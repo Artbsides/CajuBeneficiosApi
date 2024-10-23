@@ -9,7 +9,7 @@ services:
         env_file:
             - .env
         environment:
-            APP_DEBUG: false
+            APP_DEBUG: 0
             APP_ENVIRONMENT: production
             DATABASE_HOST: mongodb://mongodb
         depends_on:

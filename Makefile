@@ -61,7 +61,7 @@ tests: -B  ## Run tests - Parameters: dockerized=true, verbose=true
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --rm runner"
 	else
 		POETRY_RUN="poetry run"
 	fi
@@ -73,7 +73,7 @@ tests-debug: -B  ## Run debuggable tests - Parameters: dockerized=true, verbose=
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --service-ports --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --service-ports --rm runner"
 	else
 		POETRY_RUN="poetry run"
 	fi
@@ -101,7 +101,7 @@ coverage:  ## Run dockerized tests and write reports - Parameters: dockerized=tr
 	DOCKER_COMPOSE=""
 
 	@if [ "$(dockerized)" = "true" ]; then
-		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run --rm runner"
+		DOCKER_COMPOSE="docker-compose -f compose.yml -f compose.development.yml run -e APP_ENVIRONMENT=tests --rm runner"
 	else
 		POETRY_RUN="poetry run"
 	fi
