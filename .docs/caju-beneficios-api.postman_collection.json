@@ -1,0 +1,749 @@
+{
+	"info": {
+		"_postman_id": "fa1318a4-8e4e-4725-b109-9056ef157ec9",
+		"name": "CajuBeneficiosApi",
+		"description": "# Introdução\n\nAutorizar uma transação com cartão de crédito é o pão com manteiga da vida no Caju. Este teste visa dar uma olhada nas diferentes estratégias que os candidatos podem ter ao implementar este recurso crucial.\n\n### Resolução e entrega\n\n**O que será avaliado?**\n\nAlém de avaliar a correção da sua solução, temos interesse em ver como você modela o domínio, organiza seu código e implementa seus testes.\n\n**Linguagem e bibliotecas**\n\nNa Caju, usamos **Scala e Kotlin** no nosso dia a dia (e demonstrar experiência em alguma delas é um grande diferencial). No entanto, você pode implementar sua solução utilizando sua linguagem favorita, dando preferência ao paradigma de programação funcional.\n\nBibliotecas são, obviamente, permitidas e você pode escolher o banco de dados de sua preferência.\n\n**Como entregar a solução?**\n\nEntregue a sua solução preferencialmente criando um repositório git (Github, Gitlab, etc). Você pode alternativamente entregar em um arquivo zipado ou uma pasta de algum serviço de armazenamento em nuvem (por exemplo, Google Drive)\n\nÉ muito importante escrever um arquivo README com as instruções para execução do projeto.\n\nAgora, vamos guiá-lo através de alguns conceitos básicos.\n\n# Transaction\n\n---\n\nUma versão simplificada de um transaction payload de cartão de crédito é o seguinte:\n\n``` json\n{\n    \"account\": \"123\",\n    \"totalAmount\": 100.00,\n    \"mcc\": \"5811\",\n    \"merchant\": \"PADARIA DO ZE               SAO PAULO BR\"\n}\n\n ```\n\n## Atributos\n\n- **id** - Um identificador único para esta transação.\n    \n- **accountId** - Um identificador para a conta.\n    \n- **amount** - O valor a ser debitado de um saldo.\n    \n- **merchant** - O nome do estabelecimento.\n    \n- **mcc** - Um código numérico de 4 dígitos que classifica os estabelecimentos  \n    comerciais de acordo com o tipo de produto vendido ou serviço prestado.\n    \n    O `MCC` contém a classificação do estabelecimento. Baseado no seu valor, deve-se  \n    decidir qual o saldo será utilizado (na totalidade do valor da transação). Por  \n    simplicidade, vamos usar a seguinte regra:\n    \n    - Se o `mcc` for `\"5411\"` ou `\"5412\"`, deve-se utilizar o saldo de `FOOD`.\n        \n    - Se o `mcc` for `\"5811\"` ou `\"5812\"`, deve-se utilizar o saldo de `MEAL`.\n        \n    - Para quaisquer outros valores do `mcc`, deve-se utilizar o saldo de `CASH`.\n        \n\n# Desafios\n\n---\n\nCada um dos desafios a seguir são etapas na criação de um **autorizador completo**. Seu autorizador deve ser um servidor HTTP que processe a transaction payload JSON usando as regras a seguir.\n\nAs possíveis respostas são:\n\n- `{ \"code\": \"00\" }` se a transação é **aprovada**\n    \n- `{ \"code\": \"51\" }` se a transação é **rejeitada**, porque não tem saldo suficiente\n    \n- `{ \"code\": \"07\" }` se acontecer qualquer outro problema que impeça a transação de ser processada\n    \n\nO HTTP Status Code é sempre `200`\n\n## L1. Autorizador simples\n\nO **autorizador simples** deve funcionar da seguinte forma:\n\n- Recebe a transação\n    \n- Usa **apenas** a MCC para mapear a transação para uma categoria de benefícios\n    \n- Aprova ou rejeita a transação\n    \n- Caso a transação seja aprovada, o saldo da categoria mapeada deverá ser diminuído em **totalAmount**.\n    \n\n## L2. Autorizador com fallback\n\nPara despesas não relacionadas a benefícios, criamos outra categoria, chamada **CASH**.  \nO autorizador com fallback deve funcionar como o autorizador simples, com a seguinte diferença:\n\n- Se a MCC não puder ser mapeado para uma categoria de benefícios ou se o saldo da categoria fornecida não for suficiente para pagar a transação inteira, verifica o saldo de **CASH** e, se for suficiente, debita esse saldo.\n    \n\n## L3.Dependente do comerciante\n\nAs vezes, os MCCs estão incorretos e uma transação deve ser processada levando em consideração também os dados do comerciante. Crie um mecanismo para substituir MCCs com base no nome do comerciante. O nome do comerciante tem maior precedência sobre as MCCs.\n\nExemplos:\n\n``` html\n- UBER TRIP                   SAO PAULO BR\n- UBER EATS                   SAO PAULO BR\n- PAG*JoseDaSilva          RIO DE JANEI BR\n- PICPAY*BILHETEUNICO           GOIANIA BR\n\n ```\n\n## L4. Questão aberta\n\nA seguir está uma questão aberta sobre um recurso importante de um autorizador completo (que você não precisa implementar, apenas discuta da maneira que achar adequada, como texto, diagramas, etc.).\n\n- Transações simultâneas: dado que o mesmo cartão de crédito pode ser utilizado em diferentes serviços online, existe uma pequena mas existente probabilidade de ocorrerem duas transações ao mesmo tempo. O que você faria para garantir que apenas uma transação por conta fosse processada em um determinado momento? Esteja ciente do fato de que todas as solicitações de transação são síncronas e devem ser processadas rapidamente (menos de 100 ms), ou a transação atingirá o timeout.\n    \n\n---\n\n**Para este teste, tente ao máximo implementar um sistema de autorização de transações considerando todos os desafios apresentados (L1 a L4) e conceitos básicos.**",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4274276"
+	},
+	"item": [
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "transactions",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{caju-beneficios-api[bearer-token]}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5411\",\r\n    \"merchant\": \"PADARIA DO ZE               SAO PAULO BR\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer?fallback=false",
+									"host": [
+										"{{caju-beneficios-api}}"
+									],
+									"path": [
+										"v1",
+										"transactions",
+										"authorizer"
+									],
+									"query": [
+										{
+											"key": "fallback",
+											"value": "false",
+											"description": "true|false"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "200 | 01 - Forbidden",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text",
+												"disabled": true
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:13:45 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"07\"\n}"
+								},
+								{
+									"name": "200 | 02 - Bad Request",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:13:45 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"07\"\n}"
+								},
+								{
+									"name": "200 | 03 - Not found",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:15:27 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"07\"\n}"
+								},
+								{
+									"name": "200 | 04 - Food",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5411\",\r\n    \"merchant\": \"UBER TRIP                   SAO PAULO BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:17:25 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"00\"\n}"
+								},
+								{
+									"name": "200 | 05 - Food",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5412\",\r\n    \"merchant\": \"UBER TRIP                   SAO PAULO BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:18:06 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"51\"\n}"
+								},
+								{
+									"name": "200 | 06 - Food - Merchant Name",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5413\",\r\n    \"merchant\": \"UBER EATS                   SAO PAULO BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true",
+													"disabled": true
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:19:34 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"00\"\n}"
+								},
+								{
+									"name": "200 | 07 - Meal",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5811\",\r\n    \"merchant\": \"PAG*JoseDaSilva          RIO DE JANEI BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer?fallback=true",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:24:02 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"00\"\n}"
+								},
+								{
+									"name": "200 | 08 - Meal",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5812\",\r\n    \"merchant\": \"PAG*JoseDaSilva          RIO DE JANEI BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer?fallback=true",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:25:29 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"51\"\n}"
+								},
+								{
+									"name": "200 | 09 - Meal | Merchant Name",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5813\",\r\n    \"merchant\": \"PICPAY*BILHETEUNICO           GOIANIA BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer?fallback=true",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:27:22 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"00\"\n}"
+								},
+								{
+									"name": "200 | 10 - Cash - Merchant Name",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{caju-beneficios-api[bearer-token]}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"5813\",\r\n    \"merchant\": \"PICPAY*BILHETEUNICO           GOIANIA BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer?fallback=true",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:28:04 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"00\"\n}"
+								},
+								{
+									"name": "200 | 11 - Document Not Found",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"account\": \"6712b3eb3ec7354864d4274f\",\r\n    \"totalAmount\": 12.00,\r\n    \"mcc\": \"541132\",\r\n    \"merchant\": \"PADARIA DO ZE               SAO PAULO BR\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{caju-beneficios-api}}/v1/transactions/authorizer?fallback=true",
+											"host": [
+												"{{caju-beneficios-api}}"
+											],
+											"path": [
+												"v1",
+												"transactions",
+												"authorizer"
+											],
+											"query": [
+												{
+													"key": "fallback",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "date",
+											"value": "Tue, 22 Oct 2024 17:31:35 GMT"
+										},
+										{
+											"key": "server",
+											"value": "uvicorn"
+										},
+										{
+											"key": "content-length",
+											"value": "13"
+										},
+										{
+											"key": "content-type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": \"51\"\n}"
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}
