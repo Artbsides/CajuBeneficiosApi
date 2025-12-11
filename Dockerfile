@@ -5,7 +5,8 @@ WORKDIR /app
 COPY . .
 
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir poetry
+    pip install --no-cache-dir poetry && \
+    pip install --user poetry-plugin
 
 RUN poetry export --output requirements.txt --with-credentials --no-interaction
 RUN poetry export --output requirements.dev.txt --with-credentials --no-interaction --with dev
