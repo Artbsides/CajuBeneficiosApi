@@ -1,10 +1,12 @@
-name: AuthorizationPackage - OnPush
+name: CajuBeneficiosApi - OnPush
 
 on:
     push:
         branches:
             - "**"
+
     workflow_call:
+    workflow_dispatch:
 
 jobs:
     Tests:
