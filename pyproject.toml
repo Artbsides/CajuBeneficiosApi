@@ -99,6 +99,7 @@ lines_between_types = 1
 lines_after_imports = 2
 length_sort = true
 src_paths = ["api", "tests"]
+skip = [".venv", ".poetry"]
 
 sections = [
     "THIRDPARTY",
