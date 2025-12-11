@@ -1,4 +1,4 @@
-name: AuthorizationPackage - OnPush
+name: CajuBeneficiosApi - OnPush
 
 on:
     push:
