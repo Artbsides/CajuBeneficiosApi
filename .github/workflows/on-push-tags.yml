@@ -6,6 +6,8 @@ on:
             - "[0-9]+.[0-9]+.[0-9]"
             - "[0-9]+.[0-9]+.[0-9]-staging"
 
+    workflow_dispatch:
+
 jobs:
     ReusableWorkflows:
         uses: Artbsides/ArgoCD.Deployment/.github/workflows/on-workflow-call.yml@main
